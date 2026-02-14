@@ -144,51 +144,41 @@ function render() {
       c.notes = e.target.value;
       save();
     };
+// ===== رفع الملفات على Cloudinary =====
+card.querySelectorAll("input[type=file]").forEach(inp => {
+  inp.onchange = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    // ===== رفع الملفات (سيرفر حقيقي) =====
-    card.querySelectorAll("input[type=file]").forEach(inp => {
-      inp.onchange = async e => {
-        const file = e.target.files[0];
-        if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "voice_upload");
 
-        const formData = new FormData();
-        formData.append("audio", file);
-
-        const res = await fetch("/upload", {
+    try {
+      const res = await fetch(
+        "https://api.cloudinary.com/v1_1/dhfnrf9fg/auto/upload",
+        {
           method: "POST",
           body: formData
-        });
+        }
+      );
 
-        const data = await res.json();
+      const data = await res.json();
 
-        c.audio = data.filePath;
+      if (data.secure_url) {
+        c.audio = data.secure_url;
         save();
         render();
-      };
-    });
-
-    card.querySelector(".addAmountBtn").onclick = () => {
-      const val = parseFloat(card.querySelector(".newAmount").value);
-      if (isNaN(val) || val <= 0) return alert("اكتب مبلغ صحيح");
-
-      c.totalPaid = (c.totalPaid || 0) + val;
-      save();
-      render();
-    };
-
-    card.querySelector(".doneBtn").onclick = () => {
-      if (confirm("⚠️ هل أنت متأكد؟")) {
-        clients = clients.filter(x => x !== c);
-        save();
-        render();
+      } else {
+        alert("حصل خطأ في الرفع");
       }
-    };
 
-    cards.appendChild(card);
-  });
+    } catch (err) {
+      alert("فشل الاتصال");
+    }
+  };
+});
 
-  updateStats();
-}
 
 // ===== إضافة عميل =====
 addBtn.onclick = () => {
